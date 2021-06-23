@@ -1,0 +1,4 @@
+tkinter
+requests_oauthlib
+time
+requests
