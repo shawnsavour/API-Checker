@@ -1,4 +1,6 @@
-Mở file checkAPI.exe điền API vào và bấm nút.
+Mở file checkAPI.exe.
+Chọn số lượng thread để chạy(càng nhiều càng nhanh) 
+Điền API vào và bấm nút.
 Đợi tool chạy xong sẽ xuất output ra màn hình.
 Ngoài ra còn lưu lại một file output trong cùng thư mục.
 
