@@ -2,7 +2,9 @@ from tkinter import *
 import requests, threading, json, io, random
 from requests_oauthlib import OAuth1
 from time import sleep
-
+from selenium import webdriver 
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 
 class Application:
     def threadExec(self,func):
@@ -10,6 +12,7 @@ class Application:
         print(lines)
         threads = []
         nThreads = int(self.numberofThread.get())
+        self.labelStatus.configure(text="Running")
         for cof in range(nThreads):
             t = threading.Thread(target=func, args=[nThreads, cof, lines])
             t.start()
@@ -17,6 +20,7 @@ class Application:
 
         for thread in threads:
             thread.join()
+        self.labelStatus.configure(text="Done")
 
     def setTextInput(self, text):
         self.inputEntry.delete(1.0,"end")
@@ -137,11 +141,49 @@ class Application:
         elif('error' in parsed_json):
             return 'Error'
 
+    def inputLinkedinAccount(self, nThr=1, thr=0, inputlines=None):
+        for iteration, line in enumerate(inputlines):
+            print(iteration)
+            user = line.split()
+            inputlines[iteration] = f"{str(user[0])},{str(user[1])},{self.getLinkedinToken(user[0], user[1])}\n"
+            print(inputlines[iteration])
+            self.saveOutput("LinkedinToken",inputlines)
+            self.setTextInput(inputlines)
+
+    def getLinkedinToken(self, username, password):
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.headless = True
+        driver = webdriver.Chrome(executable_path='driver/chromedriver.exe',options=chrome_options,service_log_path='NUL')
+        try:
+            driver.get("https://www.linkedin.com/")
+            driver.find_element_by_id('session_key').send_keys(username)
+            driver.find_element_by_id('session_password').send_keys(password, Keys.ENTER)
+            sleep(3)
+            cookies = driver.get_cookies()
+            format = ""
+            for i, cookie in enumerate(cookies):
+                format += cookie['name'] + "=" + cookie['value']
+                if i < len(cookies)-1:
+                    format += ";"
+            if "li_at=" not in format:
+                format = "Exception"
+        except:
+            format = "Exception"
+        driver.quit()
+        return format
+
     def main_form(self):
         self.root = Tk()
         self.root.minsize(width=300, height=300)
         self.root.title('API Checker')
         self.root.iconbitmap(r"pepe.ico")
+
+        statusFrame = Frame(self.root, relief="flat")
+        self.labelStatus = Label(statusFrame, text="Status")
+        self.labelStatus.pack()
+        statusFrame.pack()
 
         threadFrame = Frame(self.root, relief="flat")
 
@@ -183,6 +225,9 @@ class Application:
         self.function_4 = Button(fncFrame, text="VKAPIs", command=lambda: self.sci_thread('vkAPI'))
         self.function_4.pack(side = LEFT, padx=5, pady= 5)
 
+        self.function_5 = Button(fncFrame, text="Get token Linkedin", command=lambda: self.sci_thread('execLinkedinToken'))
+        self.function_5.pack(side = LEFT, padx=5, pady= 5)
+
         self.QUIT = Button(fncFrame,text="QUIT", fg="red", command=self.root.quit)
         self.QUIT.pack(side = RIGHT)
 
@@ -200,6 +245,9 @@ class Application:
             maincal = threading.Thread(target=self.threadExec, args=[self.inputyoutubeAPI])
         elif fncname == 'liAPI':
             maincal = threading.Thread(target=self.threadExec, args=[self.inputlinkedinAPI])
+        elif fncname == 'execLinkedinToken':
+            self.numberofThread.set(1)
+            maincal = threading.Thread(target=self.threadExec, args=[self.inputLinkedinAccount])
         maincal.start()
 
 co = Application()
