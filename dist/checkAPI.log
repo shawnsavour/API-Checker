@@ -1,0 +1,16 @@
+Exception in thread Thread-3:
+Traceback (most recent call last):
+  File "threading.pyc", line 973, in _bootstrap_inner
+  File "threading.pyc", line 910, in run
+  File "checkAPI.py", line 211, in inputAgentId
+  File "checkAPI.py", line 26, in setTextInput
+  File "tkinter\__init__.pyc", line 3602, in delete
+RuntimeError: main thread is not in main loop
+Exception in thread Thread-2:
+Traceback (most recent call last):
+  File "threading.pyc", line 973, in _bootstrap_inner
+  File "threading.pyc", line 910, in run
+  File "checkAPI.py", line 23, in threadExec
+  File "tkinter\__init__.pyc", line 1646, in configure
+  File "tkinter\__init__.pyc", line 1636, in _configure
+RuntimeError: main thread is not in main loop

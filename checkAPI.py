@@ -31,7 +31,7 @@ class Application:
         return lines
 
     def saveOutput(self, fname="unknown", flines=""):
-        f = open(f"{fname}_output.txt", 'w')
+        f = open(f"{fname}_output.txt", 'w', encoding="utf-8")
         f.writelines(flines)
 
     def inputtwitterAPI(self, nThr=1, thr=0, inputlines=None):
@@ -57,7 +57,33 @@ class Application:
         if('id' in parsed_json):
             return 'Alive'
         elif('errors' in parsed_json):
-            return 'Error'
+            return parsed_json
+
+    def inputtwitterImpactAPI(self, nThr=1, thr=0, inputlines=None):
+        for iteration, line in enumerate(inputlines):
+            if(iteration%nThr != thr):
+                continue
+            API = line.split()
+            if len(API) < 4:
+                inputlines[iteration] = ",,,,\n"
+                self.saveOutput("twitterAPIs",inputlines)
+                continue
+            inputlines[iteration] = f"{API[0]},{API[1]},{API[2]},{API[3]},{self.checktwitterImpactAPI(API[0], API[1], API[2], API[3])}\n"
+            self.saveOutput("twitterAPIs",inputlines)
+        self.setTextInput(inputlines)
+
+    def checktwitterImpactAPI(self,YOUR_APP_KEY=None,YOUR_APP_SECRET=None,USER_OAUTH_TOKEN=None,USER_OAUTH_TOKEN_SECRET=None,):
+        if YOUR_APP_KEY is None:
+            return ''
+        url = "https://api.twitter.com/1.1/statuses/destroy/240854986559455234.json"
+        auth = OAuth1(YOUR_APP_KEY, YOUR_APP_SECRET, USER_OAUTH_TOKEN, USER_OAUTH_TOKEN_SECRET)
+        content = requests.post(url, auth=auth).text
+        parsed_json = json.loads(content)
+        return parsed_json
+        # if('id' in parsed_json):
+        #     return 'Alive'
+        # elif('errors' in parsed_json):
+        #     return parsed_json
 
     def inputyoutubeAPI(self, nThr=1, thr=0, inputlines=None):
         for iteration, line in enumerate(inputlines):
@@ -174,6 +200,51 @@ class Application:
         driver.quit()
         return format
 
+
+    def inputAgentId(self, nThr=1, thr=0, inputlines=None):
+        for iteration, line in enumerate(inputlines):
+            print(iteration)
+            user = line.split()
+            inputlines[iteration] = f"{str(user[0])},{self.getPath(user[0])}\n"
+            print(inputlines[iteration])
+            self.saveOutput("Path",inputlines)
+            self.setTextInput(inputlines)
+
+    def getPath(self, agentId):
+        try:
+            r = json.loads(requests.get("http://125.138.183.122:8084/deepsignal-de-tool/api/agent/agentInfo?serverName=DeepSignal&agentId="+agentId).text)['data']['path']
+        except Exception as e:
+            r = ""
+        return r
+
+    def inputLinkedinAccountLiatJses(self, nThr=1, thr=0, inputlines=None):
+        for iteration, line in enumerate(inputlines):
+            print(iteration)
+            user = line.split()
+            inputlines[iteration] = f"{str(user[0])},{str(user[1])},{self.getLinkedinTokenLiatJses(user[0], user[1])}\n"
+            print(inputlines[iteration])
+            self.saveOutput("LinkedinToken",inputlines)
+            self.setTextInput(inputlines)
+
+    def getLinkedinTokenLiatJses(self, username, password):
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.headless = True
+        driver = webdriver.Chrome(executable_path='driver/chromedriver.exe',options=chrome_options,service_log_path='NUL')
+        driver.get("https://www.linkedin.com/")
+        driver.find_element_by_id('session_key').send_keys(username)
+        driver.find_element_by_id('session_password').send_keys(password, Keys.ENTER)
+        sleep(3)
+        try:
+            liat = driver.get_cookie('li_at')['value']
+            jses = driver.get_cookie('JSESSIONID')['value']
+        except:
+            return ('error');
+        driver.quit()
+        return f"{liat},{jses}"
+
+
     def main_form(self):
         self.root = Tk()
         self.root.minsize(width=300, height=300)
@@ -216,6 +287,9 @@ class Application:
         self.function_1 = Button(fncFrame, text="TwitterAPIs", command=lambda: self.sci_thread('twAPI'))
         self.function_1.pack(side = LEFT, padx=5, pady= 5)
 
+        self.function_1 = Button(fncFrame, text="TwitterImpactAPIs", command=lambda: self.sci_thread('twImpactAPI'))
+        self.function_1.pack(side = LEFT, padx=5, pady= 5)
+
         self.function_2 = Button(fncFrame, text="YoutubeAPIs", command=lambda: self.sci_thread('ytAPI'))
         self.function_2.pack(side = LEFT, padx=5, pady= 5)
 
@@ -227,6 +301,12 @@ class Application:
 
         self.function_5 = Button(fncFrame, text="Get token Linkedin", command=lambda: self.sci_thread('execLinkedinToken'))
         self.function_5.pack(side = LEFT, padx=5, pady= 5)
+
+        self.function_6 = Button(fncFrame, text="Get token Linkedin Liat Jses", command=lambda: self.sci_thread('execLinkedinTokenLiatJses'))
+        self.function_6.pack(side = LEFT, padx=5, pady= 5)
+
+        self.function_7 = Button(fncFrame, text="Get Path", command=lambda: self.sci_thread('excGetPath'))
+        self.function_7.pack(side = LEFT, padx=5, pady= 5)
 
         self.QUIT = Button(fncFrame,text="QUIT", fg="red", command=self.root.quit)
         self.QUIT.pack(side = RIGHT)
@@ -241,6 +321,8 @@ class Application:
             maincal = threading.Thread(target=self.threadExec, args=[self.inputvkAPI])
         elif fncname == 'twAPI':
             maincal = threading.Thread(target=self.threadExec, args=[self.inputtwitterAPI])
+        elif fncname == 'twImpactAPI':
+            maincal = threading.Thread(target=self.threadExec, args=[self.inputtwitterImpactAPI])
         elif fncname == 'ytAPI':
             maincal = threading.Thread(target=self.threadExec, args=[self.inputyoutubeAPI])
         elif fncname == 'liAPI':
@@ -248,6 +330,11 @@ class Application:
         elif fncname == 'execLinkedinToken':
             self.numberofThread.set(1)
             maincal = threading.Thread(target=self.threadExec, args=[self.inputLinkedinAccount])
+        elif fncname == 'execLinkedinTokenLiatJses':
+            self.numberofThread.set(1)
+            maincal = threading.Thread(target=self.threadExec, args=[self.inputLinkedinAccountLiatJses])
+        elif fncname == 'excGetPath':
+            maincal = threading.Thread(target=self.threadExec, args=[self.inputAgentId])    
         maincal.start()
 
 co = Application()
